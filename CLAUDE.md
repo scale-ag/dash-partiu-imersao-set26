@@ -140,13 +140,15 @@ ofertas diferentes do ingresso, não um valor fixo).
    corrige este caso sem quebrar nenhum formato que já funcionava (tenta a
    string completa primeiro, como antes).
 
-   **Os dois desvios de engine acima são específicos deste repositório**
+   **Os três desvios de engine deste repositório** (este e o #3 mais abaixo,
+   na nota sobre anúncio duplicado em dois conjuntos) são específicos daqui
    (cada client repo tem sua própria cópia de `build.py`, não é um arquivo
    compartilhado) e estão comentados inline no próprio `build.py`. Se portar
    melhorias de engine do template `dash-pessoa-opf-set26` para cá, preserve
-   as duas mudanças — e considere levar o fix do parse de data *para* o
-   template também, já que "Data" com hora embutida é um formato comum em
-   exports de outras planilhas, não uma particularidade deste cliente.
+   as três mudanças — e considere levar os fixes de parse de data e de
+   desambiguação de conjunto *para* o template também: "Data" com hora
+   embutida e um criativo duplicado em dois conjuntos são situações comuns em
+   qualquer conta do Meta, não particularidades deste cliente.
 4. **`AD_UTM_COLUMN = "utm_content"` — confirmado nos dados**, não assumido.
    Cruzando cada coluna UTM contra os 8 `Ad Name`/4 `Campaign Name` reais do
    Meta (55 vendas com UTM preenchida):
@@ -164,16 +166,37 @@ ofertas diferentes do ingresso, não um valor fixo).
    `Utm_term` carrega o **posicionamento** (`Instagram_Feed`, `Instagram_Reels`,
    `Instagram_Stories`, `Facebook_Stories`) — não usar para atribuição.
    `utm_medium` carrega o agrupamento de conjunto (ex.: `AUTO - ALL - 18a65 -
-   BR - Mix Quente | AD1 ao AD4`), coerente com `Ad Set Name`, mas o match
-   exato não foi conferido (não é necessário — a engine usa
-   campanha+`AD_UTM_COLUMN` para atribuição, não `utm_medium`).
+   BR - Mix Quente | AD1 ao AD4`) e bate **exatamente** com `Ad Set Name` —
+   usado pelo desvio de engine #3 abaixo para desambiguar conjunto.
    Mapeamento: `utm_campaign → Campaign Name` · `utm_medium → Ad Set Name` ·
    `utm_content → Ad Name`.
-5. **Sem coluna de permalink do criativo** na aba Meta Ads → o Top/Piores
+5. **O mesmo Ad Name roda em MAIS DE UM conjunto dentro da mesma campanha.**
+   Achado ao investigar um relato do cliente de que a tabela "Conjuntos (Ad
+   Sets)" da aba Meta Ads não batia com a planilha: `AD01_V_ST_Captação_
+   Imersão-SET26`, na campanha "V1 | 2026-09-01 | Teste de Criativos", tem
+   linhas diárias de gasto em **dois** conjuntos diferentes (`AD1 ao AD4` e
+   `AD5 ao AD8`) desde 01/09 — o mesmo criativo rodando em dois públicos ao
+   mesmo tempo, não um conjunto que mudou ao longo do tempo. A chave de match
+   original da engine (`campanha`+`Ad Name`) não tem como saber qual dos dois
+   conjuntos uma venda pertence — ela pegava sempre o primeiro conjunto
+   encontrado no CSV do Meta para esse par, jogando as 52 vendas desse anúncio
+   inteiras num conjunto só (o gasto, por vir direto de cada linha do Meta,
+   sempre esteve correto; só a atribuição de vendas/faturamento/CAC/ROAS por
+   conjunto estava errada).
+   **Desvio de engine #3:** `ad_map` (`build/build.py`) agora guarda TODOS os
+   conjuntos candidatos por campanha+anúncio (antes guardava só o primeiro).
+   Quando há mais de um candidato, desambigua pelo `utm_medium` da venda
+   comparado ao `Ad Set Name` real de cada candidato — bateu exatamente para
+   as 44 vendas ambíguas (0 caíram no fallback do primeiro candidato).
+   Resultado real: campanha "V1 | 2026-09-01" tinha 52 vendas atribuídas
+   100% a `AD1 ao AD4`/0 a `AD5 ao AD8`; corrigido para 16/36. Esse desvio
+   também vale a pena levar para o template — a mesma situação (criativo
+   duplicado em dois conjuntos) pode acontecer em qualquer conta do Meta.
+6. **Sem coluna de permalink do criativo** na aba Meta Ads → o Top/Piores
    anúncios da aba Relatórios aparece **sem link** para o criativo. Para
    ativar, acrescente a coluna `Creative Instagram Permalink` na planilha do
    Meta.
-6. **Sem coluna de MQL/Leads.** Nem a planilha de Meta Ads nem a de
+7. **Sem coluna de MQL/Leads.** Nem a planilha de Meta Ads nem a de
    Compradores têm qualquer coluna relacionada a qualificação de lead — o
    funil é tráfego pago direto para a oferta, sem etapa de MQL nesta
    dashboard (igual ao padrão do template para funis VSL).

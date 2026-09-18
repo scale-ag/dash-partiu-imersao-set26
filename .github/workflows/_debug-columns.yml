@@ -133,3 +133,21 @@ jobs:
               print()
           PY
 
+      - name: Confirmar o gid candidato buscando via export csv
+        run: |
+          python3 - <<'PY'
+          import csv, io, urllib.request
+
+          SALES_ID = "1Qe1_LFcrd98hhOTa5rJAL78ZRUoHCZ-Pj4kIRgdiljI"
+          CANDIDATE_GID = "1083963375"
+
+          url = f"https://docs.google.com/spreadsheets/d/{SALES_ID}/export?format=csv&gid={CANDIDATE_GID}"
+          req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+          with urllib.request.urlopen(req, timeout=30) as r:
+              data = r.read().decode("utf-8-sig", errors="replace")
+          rows = list(csv.reader(io.StringIO(data)))
+          print(f"gid={CANDIDATE_GID} -> linhas={len(rows)-1}")
+          print("colunas:", rows[0])
+          PY
+
+

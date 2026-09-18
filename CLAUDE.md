@@ -112,6 +112,14 @@ ofertas diferentes do ingresso, não um valor fixo).
      `build/config.py`: como `str.startswith("")` é sempre `True`, toda linha
      passa a contar como produto principal — correto aqui, já que 100% da
      planilha É o produto principal.
+     **Desvio de engine (único neste repositório):** a validação de boot de
+     `build/build.py` tratava `MAIN_PRODUCT_PREFIX` vazio como "campo
+     obrigatório não preenchido" e recusava rodar o build — mas `""` é o
+     valor correto aqui, não um esquecimento. `MAIN_PRODUCT_PREFIX` foi
+     removido da tupla `_REQUIRED` (com comentário explicando o porquê, na
+     própria linha). É a única diferença deste `build.py` em relação à
+     engine do template `dash-pessoa-opf-set26`; ao portar melhorias de
+     engine para este repositório, preserve essa linha.
    - **Cosmético (não corrigido, documentado):** a coluna "Produto" exibida na
      tabela de compradores (aba Meta Ads) vai mostrar o valor da coluna `Data`
      (efeito do mesmo fallback posicional) em vez de ficar em branco ou

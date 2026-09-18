@@ -39,8 +39,13 @@ except ImportError:
         "Veja os comentários em cada campo de build/config.example.py."
     )
 
-_REQUIRED = ("SPREADSHEET_ID", "GID_META", "GID_SALES", "MAIN_PRODUCT_PREFIX",
+_REQUIRED = ("SPREADSHEET_ID", "GID_META", "GID_SALES",
              "CLIENT_NAME", "MAIN_PRODUCT")
+# MAIN_PRODUCT_PREFIX fica de fora de _REQUIRED de propósito: "" é um valor
+# válido e às vezes intencional (prefixo vazio casa com QUALQUER produto via
+# str.startswith("") -- é o comportamento certo quando a planilha de
+# Compradores não tem coluna de Produto porque já é uma lista de um único
+# produto). Os outros campos aqui nunca fazem sentido vazios.
 _missing = [name for name in _REQUIRED if not getattr(cfg, name, "")]
 if _missing:
     sys.exit(

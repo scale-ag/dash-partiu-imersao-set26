@@ -1,0 +1,150 @@
+name: DEBUG - Validacao final do cruzamento (temporário)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rodar a mesma logica do build.py e mostrar os numeros finais
+        run: |
+          python3 - <<'PY'
+          import csv, io, re, unicodedata, urllib.request
+          from datetime import datetime
+
+          def fetch_csv(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  data = r.read().decode("utf-8-sig", errors="replace")
+              return list(csv.reader(io.StringIO(data)))
+
+          def strip_accents(s):
+              return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+
+          def norm(s):
+              return strip_accents((s or "").strip().lower())
+
+          def col_idx(header, *names):
+              hn = [norm(h) for h in header]
+              for a in names:
+                  a = norm(a)
+                  for i, h in enumerate(hn):
+                      if h == a or (a and a in h):
+                          return i
+              return None
+
+          def parse_date(v):
+              if not v:
+                  return None
+              s = str(v).strip()
+              if not s:
+                  return None
+              m = re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
+              if m:
+                  return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+              date_part = s.split(" ")[0].split("T")[0]
+              for candidate in (s, date_part) if date_part != s else (s,):
+                  for fmt in ("%d/%m/%Y", "%m/%d/%Y", "%d/%m/%y", "%b %d, %Y", "%Y/%m/%d"):
+                      try:
+                          return datetime.strptime(candidate, fmt).strftime("%Y-%m-%d")
+                      except ValueError:
+                          continue
+              return None
+
+          def to_float(v):
+              if v is None:
+                  return 0.0
+              s = re.sub(r"[^\d,.\-]", "", str(v).strip())
+              if not s:
+                  return 0.0
+              if "," in s and "." in s:
+                  s = s.replace(".", "").replace(",", ".")
+              elif "," in s:
+                  s = s.replace(",", ".")
+              try:
+                  return float(s)
+              except ValueError:
+                  return 0.0
+
+          META_ID = "1mXaJWC2Eecu7eSwQ8UkamO_sLCIuZCtI5u7tA0YRYFU"
+          SALES_ID = "1Qe1_LFcrd98hhOTa5rJAL78ZRUoHCZ-Pj4kIRgdiljI"
+          SALES_GID = "1083963375"
+
+          meta_rows = fetch_csv(f"https://docs.google.com/spreadsheets/d/{META_ID}/export?format=csv&gid=0")
+          sales_rows = fetch_csv(f"https://docs.google.com/spreadsheets/d/{SALES_ID}/export?format=csv&gid={SALES_GID}")
+
+          mh = meta_rows[0]
+          mci, mai, msi = col_idx(mh, "campaign name"), col_idx(mh, "ad name"), col_idx(mh, "ad set name")
+
+          ad_map = {}
+          adset_by_campaign_ad = {}
+          for row in meta_rows[1:]:
+              if not any((c or "").strip() for c in row):
+                  continue
+              camp = (row[mci] or "").strip() or "(sem campanha)"
+              ad = (row[mai] or "").strip() or "(sem anuncio)"
+              adset = (row[msi] or "").strip() if msi is not None and len(row) > msi else ""
+              key = (norm(camp), norm(ad))
+              ad_map[key] = (camp, ad, adset)
+
+          sh = sales_rows[0]
+          sci = col_idx(sh, "utm campaign", "utm_campaign")
+          sui = col_idx(sh, "utm content", "utm_content")   # AD_UTM_COLUMN
+          smi = col_idx(sh, "utm medium", "utm_medium")
+          sdi = col_idx(sh, "data de criacao", "data", "created")
+          svi = [i for i, h in enumerate(sh) if "valor" in norm(h)][0]
+
+          n_total = n_main = n_meta = n_with_date = 0
+          fat_total = 0.0
+          adset_match = adset_total = 0
+          by_camp = {}
+          for row in sales_rows[1:]:
+              if not any((c or "").strip() for c in row):
+                  continue
+              camp_raw = (row[sci] or "").strip() if sci is not None and len(row) > sci else ""
+              ad_raw = (row[sui] or "").strip() if sui is not None and len(row) > sui else ""
+              medium_raw = (row[smi] or "").strip() if smi is not None and len(row) > smi else ""
+              date_raw = (row[sdi] or "").strip() if sdi is not None and len(row) > sdi else ""
+              val_raw = row[svi] if len(row) > svi else ""
+              if not camp_raw and not ad_raw and not date_raw:
+                  continue
+              n_total += 1
+              main = True  # MAIN_PRODUCT_PREFIX == "" -> sempre True
+              n_main += 1 if main else 0
+              key = (norm(camp_raw), norm(ad_raw))
+              hit = ad_map.get(key)
+              if hit is not None:
+                  n_meta += 1
+                  _, _, real_adset = hit
+                  adset_total += 1
+                  if medium_raw and norm(medium_raw) == norm(real_adset):
+                      adset_match += 1
+              d = parse_date(date_raw)
+              if d:
+                  n_with_date += 1
+              fat_total += to_float(val_raw)
+              camp_disp = hit[0] if hit else (camp_raw or "(sem campanha)")
+              by_camp.setdefault(camp_disp, {"vendas": 0, "fat": 0.0})
+              by_camp[camp_disp]["vendas"] += 1
+              by_camp[camp_disp]["fat"] += to_float(val_raw)
+
+          print("=== Numeros finais (replicando build.py com o fix de data) ===")
+          print(f"Total de linhas de venda validas: {n_total}")
+          print(f"main=1 (produto principal, MAIN_PRODUCT_PREFIX=''): {n_main}")
+          print(f"meta=1 (campanha+anuncio batendo com o Meta real): {n_meta}")
+          print(f"Com data parseavel (d != None): {n_with_date}")
+          print(f"Faturamento total (soma 'Valor da Compra'): R$ {fat_total:.2f}")
+          print(f"utm_medium == Ad Set Name real (nas vendas com match de Meta): {adset_match}/{adset_total}")
+          print("\nPor campanha (exibicao final na dash):")
+          for camp, d in sorted(by_camp.items(), key=lambda kv: -kv[1]["vendas"]):
+              print(f"  {d['vendas']:3d} vendas | R$ {d['fat']:8.2f} | {camp}")
+          PY

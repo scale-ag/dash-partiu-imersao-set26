@@ -148,6 +148,18 @@ jobs:
           rows = list(csv.reader(io.StringIO(data)))
           print(f"gid={CANDIDATE_GID} -> linhas={len(rows)-1}")
           print("colunas:", rows[0])
+
+          header = rows[0]
+          vi = [i for i,h in enumerate(header) if "valor" in h.strip().lower()][0]
+          def to_float(s):
+              s = (s or "").strip().replace("R$", "").replace(".", "").replace(",", ".").strip()
+              try:
+                  return float(s)
+              except ValueError:
+                  return 0.0
+          vals = [to_float(r[vi]) for r in rows[1:] if len(r) > vi and r[vi].strip()]
+          print(f"\nValor da Compra: n={len(vals)} soma={sum(vals):.2f} media={ (sum(vals)/len(vals)) if vals else 0:.2f} min={min(vals) if vals else 0:.2f} max={max(vals) if vals else 0:.2f}")
+          print("amostra de valores brutos:", [r[vi] for r in rows[1:9]])
           PY
 
 

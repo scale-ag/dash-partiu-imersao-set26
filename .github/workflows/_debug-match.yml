@@ -1,0 +1,106 @@
+name: DEBUG - Checar match campanha+anuncio (temporário)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Replicar a logica de match do build.py contra os dados reais
+        run: |
+          python3 - <<'PY'
+          import csv, io, urllib.request, unicodedata
+
+          def fetch_csv(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  data = r.read().decode("utf-8-sig", errors="replace")
+              return list(csv.reader(io.StringIO(data)))
+
+          def strip_accents(s):
+              return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+
+          def norm(s):
+              return strip_accents((s or "").strip().lower())
+
+          def col_idx(header, *names):
+              hn = [norm(h) for h in header]
+              for a in names:
+                  a = norm(a)
+                  for i, h in enumerate(hn):
+                      if h == a or (a and a in h):
+                          return i
+              return None
+
+          META_ID = "1mXaJWC2Eecu7eSwQ8UkamO_sLCIuZCtI5u7tA0YRYFU"
+          SALES_ID = "1Qe1_LFcrd98hhOTa5rJAL78ZRUoHCZ-Pj4kIRgdiljI"
+          SALES_GID = "1083963375"
+
+          meta_rows = fetch_csv(f"https://docs.google.com/spreadsheets/d/{META_ID}/export?format=csv&gid=0")
+          sales_rows = fetch_csv(f"https://docs.google.com/spreadsheets/d/{SALES_ID}/export?format=csv&gid={SALES_GID}")
+
+          mh = meta_rows[0]
+          mci = col_idx(mh, "campaign name")
+          mai = col_idx(mh, "ad name")
+
+          ad_map = {}
+          ads_by_campaign = {}
+          campaigns_by_ad = {}
+          for row in meta_rows[1:]:
+              if not any((c or "").strip() for c in row):
+                  continue
+              camp = (row[mci] if mci is not None and len(row) > mci else "").strip() or "(sem campanha)"
+              ad = (row[mai] if mai is not None and len(row) > mai else "").strip() or "(sem anuncio)"
+              key = (norm(camp), norm(ad))
+              ad_map[key] = (camp, ad)
+              ads_by_campaign.setdefault(norm(camp), set()).add(norm(ad))
+              campaigns_by_ad.setdefault(norm(ad), set()).add(norm(camp))
+
+          print(f"ad_map (combinacoes campanha+anuncio reais que tem gasto no Meta): {len(ad_map)}")
+          for (c, a), (co, ao) in ad_map.items():
+              print(f"  - campanha={co!r} anuncio={ao!r}")
+
+          sh = sales_rows[0]
+          sci = col_idx(sh, "utm campaign", "utm_campaign")
+          sai = col_idx(sh, "utm content", "utm_content")
+
+          n_total = 0
+          n_hit = 0
+          miss_examples = []
+          for row in sales_rows[1:]:
+              if not any((c or "").strip() for c in row):
+                  continue
+              camp = (row[sci] if sci is not None and len(row) > sci else "").strip()
+              ad = (row[sai] if sai is not None and len(row) > sai else "").strip()
+              if not camp and not ad:
+                  continue
+              n_total += 1
+              key = (norm(camp), norm(ad))
+              if key in ad_map:
+                  n_hit += 1
+              else:
+                  reason = []
+                  if norm(camp) not in ads_by_campaign:
+                      reason.append("campanha nao existe no Meta")
+                  elif norm(ad) not in ads_by_campaign.get(norm(camp), set()):
+                      reason.append("anuncio nao roda nessa campanha no Meta")
+                  if norm(ad) not in campaigns_by_ad:
+                      reason.append("anuncio nao existe no Meta em nenhuma campanha")
+                  miss_examples.append((camp, ad, "; ".join(reason) or "motivo desconhecido"))
+
+          print(f"\nVendas com UTM: {n_total}  |  bateram (campanha+anuncio) com o Meta: {n_hit}  |  nao bateram: {n_total - n_hit}")
+          print("\nExemplos de nao-match (ate 20):")
+          for camp, ad, reason in miss_examples[:20]:
+              print(f"  venda: campanha={camp!r} anuncio={ad!r} -> {reason}")
+              if norm(ad) in campaigns_by_ad:
+                  print(f"      esse anuncio SO roda, no Meta, nas campanhas: {[ad_map[(c,norm(ad))][0] for c in campaigns_by_ad[norm(ad)]]}")
+          PY

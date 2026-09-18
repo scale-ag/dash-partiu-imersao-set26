@@ -103,4 +103,43 @@ jobs:
               print(f"  venda: campanha={camp!r} anuncio={ad!r} -> {reason}")
               if norm(ad) in campaigns_by_ad:
                   print(f"      esse anuncio SO roda, no Meta, nas campanhas: {[ad_map[(c,norm(ad))][0] for c in campaigns_by_ad[norm(ad)]]}")
+
+          # ---- checar parse de data, igual ao parse_date() do build.py ----
+          import re as _re
+          from datetime import datetime as _dt
+
+          def parse_date(v):
+              if not v:
+                  return None
+              s = str(v).strip()
+              if not s:
+                  return None
+              m = _re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
+              if m:
+                  return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+              for fmt in ("%d/%m/%Y", "%m/%d/%Y", "%d/%m/%y", "%b %d, %Y", "%Y/%m/%d"):
+                  try:
+                      return _dt.strptime(s, fmt).strftime("%Y-%m-%d")
+                  except ValueError:
+                      continue
+              return None
+
+          di = col_idx(sh, "data de criacao", "data", "created")
+          print(f"\n=== Coluna Data (indice {di}) ===")
+          raw_dates = [r[di] for r in sales_rows[1:] if len(r) > di and r[di].strip()]
+          print("amostra bruta:", raw_dates[:10])
+          parsed = [(rv, parse_date(rv)) for rv in raw_dates]
+          n_ok = sum(1 for _, p in parsed if p)
+          n_fail = len(parsed) - n_ok
+          print(f"parse_date(): {n_ok} ok, {n_fail} falharam")
+          print("exemplos que falharam:", [rv for rv, p in parsed if not p][:10])
+          oks = sorted(p for _, p in parsed if p)
+          if oks:
+              print(f"faixa de datas parseadas: {oks[0]} a {oks[-1]}")
+
+          mdi = col_idx(mh, "day", "data")
+          mraw = [r[mdi] for r in meta_rows[1:] if len(r) > mdi and r[mdi].strip()]
+          mparsed = sorted(p for p in (parse_date(v) for v in mraw) if p)
+          if mparsed:
+              print(f"faixa de datas do Meta Ads: {mparsed[0]} a {mparsed[-1]}")
           PY

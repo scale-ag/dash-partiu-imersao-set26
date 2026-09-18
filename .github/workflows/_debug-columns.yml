@@ -101,3 +101,35 @@ jobs:
               for i, h in enumerate(sales_header):
                   print(f"  [{i}] {h}")
           PY
+
+      - name: Descobrir o gid numerico da aba de Compradores pelo nome
+        run: |
+          python3 - <<'PY'
+          import re, urllib.request
+
+          SALES_ID = "1Qe1_LFcrd98hhOTa5rJAL78ZRUoHCZ-Pj4kIRgdiljI"
+          SALES_SHEET_NAME = "Imersao 0 ao Lucro 4"
+
+          req = urllib.request.Request(
+              f"https://docs.google.com/spreadsheets/d/{SALES_ID}/edit",
+              headers={"User-Agent": "Mozilla/5.0"},
+          )
+          with urllib.request.urlopen(req, timeout=30) as r:
+              html = r.read().decode("utf-8", errors="replace")
+
+          print(f"tamanho do HTML: {len(html)} bytes")
+
+          # Imprime um trecho de contexto ao redor de cada ocorrencia literal do
+          # nome da aba no HTML, para eu conseguir localizar visualmente o gid
+          # numerico correspondente na estrutura bootstrap do Google (que muda
+          # de formato com frequencia, entao nao da pra confiar so em regex).
+          idxs = [m.start() for m in re.finditer(re.escape(SALES_SHEET_NAME), html)]
+          print(f"ocorrencias literais do nome da aba no HTML: {len(idxs)}")
+          for i, pos in enumerate(idxs[:15]):
+              start = max(0, pos - 150)
+              end = min(len(html), pos + 150)
+              print(f"--- ocorrencia {i} (offset {pos}) ---")
+              print(html[start:end].replace("\n", " "))
+              print()
+          PY
+

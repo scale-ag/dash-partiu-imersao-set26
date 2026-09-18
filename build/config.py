@@ -32,8 +32,7 @@ GID_SALES = "1083963375"      # aba "Imersao 0 ao Lucro 4" (12 colunas úteis)
 # 2) REGRAS DE NEGÓCIO
 # ==========================================================================
 # Fator de imposto sobre o gasto do Meta Ads (toggle "Imposto Meta" na topbar).
-# Nenhum imposto foi informado para este cliente — ajuste se houver.
-TAX_FACTOR = 1.0
+TAX_FACTOR = 1.13806   # +13,806%
 
 # Produto principal do funil. O match é por PREFIXO sobre o nome NORMALIZADO
 # (sem acento, minúsculas) da coluna PRODUTO — por isso o valor abaixo também
@@ -63,7 +62,7 @@ COUNT_ALL_AS_PAID = True
 # ==========================================================================
 CLIENT_NAME = "PARTIU EMPREENDER"
 CLIENT_SUB = "IMERSÃO DO ZERO AO LUCRO - SETEMBRO 2026"
-TAX_LABEL = "Imposto Meta ×1,00"
+TAX_LABEL = "Imposto Meta ×1,13806"
 MAIN_PRODUCT = "Imersão do Zero ao Lucro"
 
 # ==========================================================================

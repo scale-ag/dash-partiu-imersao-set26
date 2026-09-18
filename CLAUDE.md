@@ -223,9 +223,10 @@ ConvCHK (Vendas/Checkouts) · Faturamento · ROAS (Faturamento/Gasto) · Ticket 
   conta status pago (aqui, sempre — ver `COUNT_ALL_AS_PAID`).
 
 ### Imposto Meta Ads
-Toggle ON aplica o `TAX_FACTOR` (definido em `build/config.py`). Nenhum imposto
-foi informado para este cliente — `TAX_FACTOR = 1.0` (sem efeito). Ajuste se o
-gestor confirmar um imposto sobre o gasto do Meta.
+Toggle ON aplica o `TAX_FACTOR` (definido em `build/config.py`). `TAX_FACTOR =
+1.13806` (+13,806%), o mesmo valor usado no outro cliente do template
+(Fernando Pessoa) — confirmado explicitamente para este cliente, não copiado
+por padrão.
 
 ## IA Insights
 

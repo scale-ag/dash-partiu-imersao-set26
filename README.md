@@ -115,8 +115,7 @@ Vendas · **CAC** (Gasto/Vendas) · **ConvCHK** (Vendas/Checkouts) · Faturament
 - **Faturamento / ROAS**: consideram **todos os produtos** do funil (orderbumps e
   upsells inclusos), atribuídos ao tráfego rastreado.
 - **Imposto Meta**: toggle ON aplica o fator configurado em `TAX_FACTOR`
-  (`build/config.py`) — nenhum imposto foi informado para este cliente
-  (`TAX_FACTOR = 1.0`).
+  (`build/config.py`) — `TAX_FACTOR = 1.13806` (+13,806%).
 
 ## O que a dashboard mostra
 

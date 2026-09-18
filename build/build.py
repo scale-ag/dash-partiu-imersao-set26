@@ -267,8 +267,14 @@ def process(meta_rows, sales_rows):
         adset = cell(row, midx["adset"]) or "(sem conjunto)"
         ad = cell(row, midx["ad"]) or "(sem anúncio)"
         key = (norm(camp), norm(ad))
-        if key not in ad_map:
-            ad_map[key] = (camp, adset)
+        # Uma lista, não um valor único: o mesmo Ad Name pode rodar em MAIS DE UM
+        # conjunto dentro da mesma campanha (ex.: o mesmo criativo testado em dois
+        # públicos diferentes) -- guardamos todos os conjuntos vistos para essa
+        # campanha+anúncio e desambiguamos na hora do match da venda (abaixo).
+        entry = (camp, adset)
+        candidates = ad_map.setdefault(key, [])
+        if entry not in candidates:
+            candidates.append(entry)
         link = cell(row, midx["link"])
         if link and ad not in ad_links:
             ad_links[ad] = link
@@ -328,7 +334,22 @@ def process(meta_rows, sales_rows):
         # Match com o Meta = campanha + anúncio juntos (o mesmo Ad Name se repete
         # entre campanhas; casar só pelo anúncio atribui a venda à campanha errada).
         meta_key = (norm(sale_camp), norm(ad))
-        meta_hit = ad_map.get(meta_key)
+        meta_candidates = ad_map.get(meta_key)
+        meta_hit = None
+        if meta_candidates:
+            if len(meta_candidates) == 1:
+                meta_hit = meta_candidates[0]
+            else:
+                # Mesma campanha+anúncio aponta para MAIS de um conjunto (o
+                # anúncio roda em dois conjuntos ao mesmo tempo) -- desambigua
+                # pelo utm_medium (que costuma carregar o Ad Set Name) quando
+                # ele bate exatamente com um dos conjuntos candidatos. Sem
+                # match, cai no primeiro candidato (comportamento anterior).
+                medium_n = norm(cell(row, sidx["utm_medium"]))
+                meta_hit = next(
+                    (c for c in meta_candidates if medium_n and norm(c[1]) == medium_n),
+                    meta_candidates[0],
+                )
         # Atribuição ao tráfego rastreado: produto principal OU par campanha+anúncio
         # que existe no Meta (captura orderbumps/upsells que carregam a UTM do anúncio).
         attributed = main or (meta_hit is not None)

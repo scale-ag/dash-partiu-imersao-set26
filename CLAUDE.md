@@ -112,14 +112,11 @@ ofertas diferentes do ingresso, não um valor fixo).
      `build/config.py`: como `str.startswith("")` é sempre `True`, toda linha
      passa a contar como produto principal — correto aqui, já que 100% da
      planilha É o produto principal.
-     **Desvio de engine (único neste repositório):** a validação de boot de
-     `build/build.py` tratava `MAIN_PRODUCT_PREFIX` vazio como "campo
-     obrigatório não preenchido" e recusava rodar o build — mas `""` é o
-     valor correto aqui, não um esquecimento. `MAIN_PRODUCT_PREFIX` foi
-     removido da tupla `_REQUIRED` (com comentário explicando o porquê, na
-     própria linha). É a única diferença deste `build.py` em relação à
-     engine do template `dash-pessoa-opf-set26`; ao portar melhorias de
-     engine para este repositório, preserve essa linha.
+     **Desvio de engine #1:** a validação de boot de `build/build.py` tratava
+     `MAIN_PRODUCT_PREFIX` vazio como "campo obrigatório não preenchido" e
+     recusava rodar o build — mas `""` é o valor correto aqui, não um
+     esquecimento. `MAIN_PRODUCT_PREFIX` foi removido da tupla `_REQUIRED`
+     (com comentário explicando o porquê, na própria linha).
    - **Cosmético (não corrigido, documentado):** a coluna "Produto" exibida na
      tabela de compradores (aba Meta Ads) vai mostrar o valor da coluna `Data`
      (efeito do mesmo fallback posicional) em vez de ficar em branco ou
@@ -130,7 +127,27 @@ ofertas diferentes do ingresso, não um valor fixo).
      cliente.
 2. **Sem coluna de status de pagamento** → `COUNT_ALL_AS_PAID = True` (toda
    linha da aba "Imersao 0 ao Lucro 4" é uma compra confirmada).
-3. **`AD_UTM_COLUMN = "utm_content"` — confirmado nos dados**, não assumido.
+3. **Coluna `Data` vem com hora junto** (`"01/09/2026 11:47"`, não só
+   `"01/09/2026"`). `parse_date()` (`build/build.py`) fazia
+   `datetime.strptime(s, "%d/%m/%Y")`, que exige match da string INTEIRA —
+   com a hora sobrando no fim, TODAS as 58 linhas de venda falhavam o parse
+   (`d = None`), então nenhuma venda sobrevivia a qualquer filtro de data do
+   dashboard (sintoma reportado pelo cliente: "vendas zeradas / não
+   cruzadas", mesmo com o campanha+anúncio batendo 56/56 com o Meta — o
+   cruzamento em si estava correto, o problema era a data). **Desvio de
+   engine #2:** `parse_date()` agora também tenta só a parte antes do
+   primeiro espaço/`T` quando a string inteira não bate com nenhum formato —
+   corrige este caso sem quebrar nenhum formato que já funcionava (tenta a
+   string completa primeiro, como antes).
+
+   **Os dois desvios de engine acima são específicos deste repositório**
+   (cada client repo tem sua própria cópia de `build.py`, não é um arquivo
+   compartilhado) e estão comentados inline no próprio `build.py`. Se portar
+   melhorias de engine do template `dash-pessoa-opf-set26` para cá, preserve
+   as duas mudanças — e considere levar o fix do parse de data *para* o
+   template também, já que "Data" com hora embutida é um formato comum em
+   exports de outras planilhas, não uma particularidade deste cliente.
+4. **`AD_UTM_COLUMN = "utm_content"` — confirmado nos dados**, não assumido.
    Cruzando cada coluna UTM contra os 8 `Ad Name`/4 `Campaign Name` reais do
    Meta (55 vendas com UTM preenchida):
 
@@ -152,11 +169,11 @@ ofertas diferentes do ingresso, não um valor fixo).
    campanha+`AD_UTM_COLUMN` para atribuição, não `utm_medium`).
    Mapeamento: `utm_campaign → Campaign Name` · `utm_medium → Ad Set Name` ·
    `utm_content → Ad Name`.
-4. **Sem coluna de permalink do criativo** na aba Meta Ads → o Top/Piores
+5. **Sem coluna de permalink do criativo** na aba Meta Ads → o Top/Piores
    anúncios da aba Relatórios aparece **sem link** para o criativo. Para
    ativar, acrescente a coluna `Creative Instagram Permalink` na planilha do
    Meta.
-5. **Sem coluna de MQL/Leads.** Nem a planilha de Meta Ads nem a de
+6. **Sem coluna de MQL/Leads.** Nem a planilha de Meta Ads nem a de
    Compradores têm qualquer coluna relacionada a qualificação de lead — o
    funil é tráfego pago direto para a oferta, sem etapa de MQL nesta
    dashboard (igual ao padrão do template para funis VSL).

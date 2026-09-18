@@ -148,11 +148,18 @@ def parse_date(v: str) -> str | None:
     m = re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
     if m:
         return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
-    for fmt in ("%d/%m/%Y", "%m/%d/%Y", "%d/%m/%y", "%b %d, %Y", "%Y/%m/%d"):
-        try:
-            return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
-        except ValueError:
-            continue
+    # Algumas planilhas trazem a coluna de data com hora junto (ex.: "01/09/2026
+    # 11:47"). strptime exige match da string inteira, então isso quebrava o
+    # parse mesmo com o formato de data certo -- tenta a string inteira primeiro
+    # (compatível com o comportamento anterior) e depois só a parte antes do
+    # espaço/"T" (data sem hora).
+    date_part = s.split(" ")[0].split("T")[0]
+    for candidate in (s, date_part) if date_part != s else (s,):
+        for fmt in ("%d/%m/%Y", "%m/%d/%Y", "%d/%m/%y", "%b %d, %Y", "%Y/%m/%d"):
+            try:
+                return datetime.strptime(candidate, fmt).strftime("%Y-%m-%d")
+            except ValueError:
+                continue
     return None
 
 

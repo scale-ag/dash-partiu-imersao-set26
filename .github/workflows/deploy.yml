@@ -21,10 +21,17 @@ permissions:
   pages: write
   id-token: write
 
-# Nunca roda dois deploys ao mesmo tempo; nao cancela um deploy em andamento
+# Nunca roda dois deploys ao mesmo tempo. cancel-in-progress: TRUE de proposito
+# (o starter oficial do Pages usa false): em 20/09/2026 um run entrou no estado
+# "waiting" e ficou segurando este grupo por 3 dias -- todo run seguinte virou
+# "pending" e foi cancelado pelo proximo, e a dash congelou no build do dia 19
+# sem nenhum aviso. Com true, o disparo seguinte (a cada 15-30 min) mata o run
+# travado e assume, entao o pipeline se cura sozinho. Cancelar um deploy no meio
+# e barato aqui: cada run e um rebuild completo e idempotente a partir das
+# planilhas, e o proximo publica tudo de novo.
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-deploy:

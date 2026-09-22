@@ -26,7 +26,21 @@ const weekday=d=>{ const dt=new Date(d+'T00:00:00'); return isNaN(dt)?'':WD[dt.g
 function pad(n){return String(n).padStart(2,'0');}
 function dstr(dt){return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());}
 function addDays(s,n){const dt=new Date(s+'T00:00:00');dt.setDate(dt.getDate()+n);return dstr(dt);}
-const TODAY = B.today || B.date_max;
+/* "Hoje" sai do relogio de QUEM ESTA OLHANDO (sempre em BRT), nao da data em
+   que o build rodou. Motivo: em 09/2026 o build ficou 3 dias travado e a dash
+   seguiu chamando os numeros do dia 19 de "Hoje" -- dado velho com cara de
+   atual, o pior cenario pra quem decide verba. Com o relogio do navegador,
+   build parado aparece zerado, que e o sinal honesto. Fallback pro valor do
+   build se o Intl falhar. */
+function todayBRT(){
+  try{
+    const p = new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',
+      year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+    const g = t => p.find(x=>x.type===t).value;
+    return g('year')+'-'+g('month')+'-'+g('day');
+  }catch(e){ return null; }
+}
+const TODAY = todayBRT() || B.today || B.date_max;
 
 /* ---------------- STATE ---------------- */
 const STATE = {

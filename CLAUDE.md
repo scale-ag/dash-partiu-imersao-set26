@@ -140,15 +140,17 @@ ofertas diferentes do ingresso, não um valor fixo).
    corrige este caso sem quebrar nenhum formato que já funcionava (tenta a
    string completa primeiro, como antes).
 
-   **Os três desvios de engine deste repositório** (este e o #3 mais abaixo,
-   na nota sobre anúncio duplicado em dois conjuntos) são específicos daqui
-   (cada client repo tem sua própria cópia de `build.py`, não é um arquivo
-   compartilhado) e estão comentados inline no próprio `build.py`. Se portar
+   **Os quatro desvios de engine deste repositório** (este, o #3 mais abaixo
+   na nota sobre anúncio duplicado em dois conjuntos, e o #4 em "Build travado
+   / presets de data" no fim deste arquivo) são específicos daqui (cada client
+   repo tem sua própria cópia de `build.py`/`app.js`, não são arquivos
+   compartilhados) e estão comentados inline no próprio código. Se portar
    melhorias de engine do template `dash-pessoa-opf-set26` para cá, preserve
-   as três mudanças — e considere levar os fixes de parse de data e de
-   desambiguação de conjunto *para* o template também: "Data" com hora
-   embutida e um criativo duplicado em dois conjuntos são situações comuns em
-   qualquer conta do Meta, não particularidades deste cliente.
+   as quatro mudanças — e considere levar os fixes de parse de data,
+   desambiguação de conjunto e origem do "Hoje" *para* o template também:
+   "Data" com hora embutida, criativo duplicado em dois conjuntos e build que
+   trava são situações comuns em qualquer conta, não particularidades deste
+   cliente.
 4. **`AD_UTM_COLUMN = "utm_content"` — confirmado nos dados**, não assumido.
    Cruzando cada coluna UTM contra os 8 `Ad Name`/4 `Campaign Name` reais do
    Meta (55 vendas com UTM preenchida):
@@ -333,3 +335,35 @@ Teste local:
    (processo documentado em "Pontos de atenção" #3 acima). O match usa
    campanha+anúncio juntos, nunca só o nome do anúncio (nomes como `AD01` podem
    se repetir entre campanhas).
+9. **Build travado em `waiting` congela a dash em silêncio / presets de data
+   erram o dia.** Aconteceu de verdade em 20-22/09/2026: o run #150 do
+   `deploy.yml` entrou no estado **`waiting`** (trava de deployment no ambiente
+   `github-pages`) às 01:00 UTC de 20/09 e ficou **segurando o grupo de
+   concorrência `pages` por 3 dias**. Como o workflow estava com
+   `cancel-in-progress: false`, cada disparo novo (cron-job.org, a cada 15 min)
+   entrava como `pending` atrás dele e era cancelado pelo disparo seguinte —
+   **~250 runs seguidos, nenhum job sequer criado, nenhuma falha vermelha em
+   lugar nenhum**. O cron-job.org estava 100% funcional o tempo todo.
+
+   *Sintoma que o cliente enxerga:* a dash congela no último build bom e os
+   presets de data passam a errar o dia — "Hoje" apontando para 3 dias atrás.
+   Isso porque `TODAY` saía de `B.today`, gravado pelo `build.py` na hora do
+   build.
+
+   **Desvio de engine #4 (duas partes):**
+   - `.github/workflows/deploy.yml`: `cancel-in-progress: true` (o starter
+     oficial do Pages usa `false`). Assim o disparo seguinte mata um run
+     travado e assume, em vez de enfileirar atrás dele pra sempre — o pipeline
+     se cura sozinho. É barato aqui porque cada run é um rebuild completo e
+     idempotente a partir das planilhas.
+   - `build/app.js`: `TODAY` agora vem do **relógio do navegador** (via
+     `Intl.DateTimeFormat` fixado em `America/Sao_Paulo`), não do build.
+     Fallback para `B.today || B.date_max` se o `Intl` falhar. Decisão do
+     gestor: com build parado é melhor "Hoje" aparecer **zerado** (sinal
+     honesto de que o dado está velho) do que mostrar número de 3 dias atrás
+     rotulado como hoje — o pior cenário pra quem decide verba.
+
+   *Como diagnosticar de novo:* em Actions, se os runs aparecem como
+   `cancelled` em sequência sem nunca rodar, procure um run preso em `waiting`
+   (`?status=waiting` na URL de Actions, ou a API) e cancele-o — a fila
+   destrava na hora.

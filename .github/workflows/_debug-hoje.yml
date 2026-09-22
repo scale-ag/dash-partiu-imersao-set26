@@ -1,0 +1,161 @@
+name: DEBUG - Conferir atribuicao do dia (temporário)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dia:
+        description: "Dia a conferir (YYYY-MM-DD)"
+        required: true
+        default: "2026-09-22"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Conferir gasto x vendas x conjunto no dia
+        env:
+          DIA: ${{ inputs.dia }}
+        run: |
+          python3 - <<'PY'
+          import csv, io, os, re, unicodedata, urllib.request
+          from datetime import datetime
+
+          DIA = os.environ["DIA"]
+
+          def fetch_csv(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return list(csv.reader(io.StringIO(r.read().decode("utf-8-sig", errors="replace"))))
+
+          def strip_accents(s):
+              return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
+
+          def norm(s):
+              return strip_accents((s or "").strip().lower())
+
+          def col_idx(header, *names):
+              hn = [norm(h) for h in header]
+              for a in names:
+                  a = norm(a)
+                  for i, h in enumerate(hn):
+                      if h == a or (a and a in h):
+                          return i
+              return None
+
+          def parse_date(v):
+              if not v: return None
+              s = str(v).strip()
+              if not s: return None
+              m = re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
+              if m: return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+              dp = s.split(" ")[0].split("T")[0]
+              for cand in ((s, dp) if dp != s else (s,)):
+                  for fmt in ("%d/%m/%Y","%m/%d/%Y","%d/%m/%y","%b %d, %Y","%Y/%m/%d"):
+                      try: return datetime.strptime(cand, fmt).strftime("%Y-%m-%d")
+                      except ValueError: continue
+              return None
+
+          def to_float(v):
+              s = re.sub(r"[^\d,.\-]", "", str(v or "").strip())
+              if not s: return 0.0
+              if "," in s and "." in s: s = s.replace(".","").replace(",",".")
+              elif "," in s: s = s.replace(",",".")
+              try: return float(s)
+              except ValueError: return 0.0
+
+          META_ID  = "1mXaJWC2Eecu7eSwQ8UkamO_sLCIuZCtI5u7tA0YRYFU"
+          SALES_ID = "1Qe1_LFcrd98hhOTa5rJAL78ZRUoHCZ-Pj4kIRgdiljI"
+          SALES_GID = "1083963375"
+
+          meta_rows  = fetch_csv(f"https://docs.google.com/spreadsheets/d/{META_ID}/export?format=csv&gid=0")
+          sales_rows = fetch_csv(f"https://docs.google.com/spreadsheets/d/{SALES_ID}/export?format=csv&gid={SALES_GID}")
+
+          mh = meta_rows[0]
+          mdi, mci, msi, mai = col_idx(mh,"day","data"), col_idx(mh,"campaign name"), col_idx(mh,"ad set name"), col_idx(mh,"ad name")
+          mspi = col_idx(mh,"amount spent")
+
+          # ad_map igual ao build.py atual (lista de candidatos)
+          ad_map = {}
+          for row in meta_rows[1:]:
+              if not any((c or "").strip() for c in row): continue
+              camp = (row[mci] or "").strip() or "(sem campanha)"
+              ad   = (row[mai] or "").strip() or "(sem anuncio)"
+              adset= (row[msi] or "").strip() or "(sem conjunto)"
+              ad_map.setdefault((norm(camp), norm(ad)), [])
+              if (camp, adset) not in ad_map[(norm(camp), norm(ad))]:
+                  ad_map[(norm(camp), norm(ad))].append((camp, adset))
+
+          print(f"=== GASTO NO META em {DIA}, por conjunto ===")
+          gasto_conj = {}
+          for row in meta_rows[1:]:
+              if not any((c or "").strip() for c in row): continue
+              if parse_date(row[mdi]) != DIA: continue
+              adset = (row[msi] or "").strip() or "(sem conjunto)"
+              camp  = (row[mci] or "").strip()
+              ad    = (row[mai] or "").strip()
+              sp    = to_float(row[mspi])
+              gasto_conj[adset] = gasto_conj.get(adset, 0.0) + sp
+              print(f"  {adset!r:55s} | {ad!r:38s} | gasto={sp:7.2f}")
+          print("  ---- total por conjunto ----")
+          for a, v in sorted(gasto_conj.items(), key=lambda kv:-kv[1]):
+              print(f"  {a!r:55s} gasto_total={v:8.2f}")
+          print(f"  GASTO TOTAL NO DIA = {sum(gasto_conj.values()):.2f}")
+
+          sh = sales_rows[0]
+          sdi = col_idx(sh,"data de criacao","data","created")
+          sci = col_idx(sh,"utm campaign","utm_campaign")
+          smi = col_idx(sh,"utm medium","utm_medium")
+          sui = col_idx(sh,"utm content","utm_content")
+          svi = [i for i,h in enumerate(sh) if "valor" in norm(h)][0]
+
+          print(f"\n=== VENDAS em {DIA} (uma a uma) ===")
+          vend_conj = {}
+          n = 0
+          for row in sales_rows[1:]:
+              if not any((c or "").strip() for c in row): continue
+              if parse_date(row[sdi] if len(row)>sdi else "") != DIA: continue
+              n += 1
+              camp  = (row[sci] or "").strip() if len(row)>sci else ""
+              med   = (row[smi] or "").strip() if len(row)>smi else ""
+              ad    = (row[sui] or "").strip() if len(row)>sui else ""
+              val   = to_float(row[svi] if len(row)>svi else "")
+              cands = ad_map.get((norm(camp), norm(ad)))
+              if cands:
+                  if len(cands) == 1:
+                      hit, via = cands[0], "unico candidato"
+                  else:
+                      m = next((c for c in cands if norm(med) and norm(c[1])==norm(med)), None)
+                      hit, via = (m, "utm_medium") if m else (cands[0], "FALLBACK 1o candidato")
+                  conj = hit[1]
+              else:
+                  conj, via = (med or "(sem conjunto)"), "sem match no Meta"
+              vend_conj.setdefault(conj, {"n":0,"fat":0.0})
+              vend_conj[conj]["n"]   += 1
+              vend_conj[conj]["fat"] += val
+              print(f"  venda {n}: R$ {val:6.2f}")
+              print(f"     utm_content (anuncio) = {ad!r}")
+              print(f"     utm_medium  (conjunto)= {med!r}")
+              print(f"     -> atribuida ao conjunto {conj!r}  (via {via}; {len(cands or [])} candidatos)")
+              print(f"     -> esse conjunto gastou {gasto_conj.get(conj, 0.0):.2f} em {DIA}")
+
+          print(f"\n=== RESUMO {DIA} ===")
+          print(f"  vendas no dia: {n}")
+          for conj, d in sorted(vend_conj.items(), key=lambda kv:-kv[1]['n']):
+              g = gasto_conj.get(conj, 0.0)
+              cac = (g/d['n']) if d['n'] else 0
+              print(f"  {conj!r:55s} vendas={d['n']:2d} fat={d['fat']:8.2f} gasto={g:8.2f} CAC={cac:7.2f}")
+          print(f"  TOTAIS: gasto={sum(gasto_conj.values()):.2f} vendas={n} fat={sum(d['fat'] for d in vend_conj.values()):.2f}")
+
+          print(f"\n=== Conjuntos com VENDA mas SEM gasto em {DIA} (venda de clique de dia anterior) ===")
+          for conj, d in vend_conj.items():
+              if gasto_conj.get(conj, 0.0) == 0:
+                  print(f"  {conj!r} -> {d['n']} venda(s), R$ {d['fat']:.2f}, gasto 0,00 no dia")
+          PY

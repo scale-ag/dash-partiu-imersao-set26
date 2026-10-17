@@ -1,6 +1,6 @@
 {
-  "gerado_em": "16/10/2026 04:32",
-  "hoje": "2026-10-16",
+  "gerado_em": "17/10/2026 04:12",
+  "hoje": "2026-10-17",
   "periodo_dados": {
     "de": "2026-09-01",
     "ate": "2026-09-26"
@@ -12,6 +12,55 @@
   "ticket_medio_geral": 51.32,
   "periodos": {
     "hoje": {
+      "de": "2026-10-17",
+      "ate": "2026-10-17",
+      "total": {
+        "gasto": 0.0,
+        "impr": 0.0,
+        "cliques": 0.0,
+        "pv": 0.0,
+        "ck": 0.0,
+        "vendas": 0,
+        "fat": 0.0,
+        "cpm": null,
+        "ctr": null,
+        "cpc": null,
+        "cpv": null,
+        "cr": null,
+        "cpic": null,
+        "vischk": null,
+        "convchk": null,
+        "convlp": null,
+        "cac": null,
+        "roas": null,
+        "ticket": null
+      },
+      "ads": {
+        "gasto": 0.0,
+        "impr": 0.0,
+        "cliques": 0.0,
+        "pv": 0.0,
+        "ck": 0.0,
+        "vendas": 0,
+        "fat": 0.0,
+        "cpm": null,
+        "ctr": null,
+        "cpc": null,
+        "cpv": null,
+        "cr": null,
+        "cpic": null,
+        "vischk": null,
+        "convchk": null,
+        "convlp": null,
+        "cac": null,
+        "roas": null,
+        "ticket": null
+      },
+      "campanhas": [],
+      "top_anuncios": [],
+      "piores_anuncios": []
+    },
+    "ontem": {
       "de": "2026-10-16",
       "ate": "2026-10-16",
       "total": {
@@ -60,58 +109,9 @@
       "top_anuncios": [],
       "piores_anuncios": []
     },
-    "ontem": {
-      "de": "2026-10-15",
-      "ate": "2026-10-15",
-      "total": {
-        "gasto": 0.0,
-        "impr": 0.0,
-        "cliques": 0.0,
-        "pv": 0.0,
-        "ck": 0.0,
-        "vendas": 0,
-        "fat": 0.0,
-        "cpm": null,
-        "ctr": null,
-        "cpc": null,
-        "cpv": null,
-        "cr": null,
-        "cpic": null,
-        "vischk": null,
-        "convchk": null,
-        "convlp": null,
-        "cac": null,
-        "roas": null,
-        "ticket": null
-      },
-      "ads": {
-        "gasto": 0.0,
-        "impr": 0.0,
-        "cliques": 0.0,
-        "pv": 0.0,
-        "ck": 0.0,
-        "vendas": 0,
-        "fat": 0.0,
-        "cpm": null,
-        "ctr": null,
-        "cpc": null,
-        "cpv": null,
-        "cr": null,
-        "cpic": null,
-        "vischk": null,
-        "convchk": null,
-        "convlp": null,
-        "cac": null,
-        "roas": null,
-        "ticket": null
-      },
-      "campanhas": [],
-      "top_anuncios": [],
-      "piores_anuncios": []
-    },
     "3d": {
-      "de": "2026-10-14",
-      "ate": "2026-10-16",
+      "de": "2026-10-15",
+      "ate": "2026-10-17",
       "total": {
         "gasto": 0.0,
         "impr": 0.0,
@@ -159,8 +159,8 @@
       "piores_anuncios": []
     },
     "7d": {
-      "de": "2026-10-10",
-      "ate": "2026-10-16",
+      "de": "2026-10-11",
+      "ate": "2026-10-17",
       "total": {
         "gasto": 0.0,
         "impr": 0.0,
@@ -208,8 +208,8 @@
       "piores_anuncios": []
     },
     "14d": {
-      "de": "2026-10-03",
-      "ate": "2026-10-16",
+      "de": "2026-10-04",
+      "ate": "2026-10-17",
       "total": {
         "gasto": 0.0,
         "impr": 0.0,
@@ -257,71 +257,71 @@
       "piores_anuncios": []
     },
     "30d": {
-      "de": "2026-09-17",
-      "ate": "2026-10-16",
+      "de": "2026-09-18",
+      "ate": "2026-10-17",
       "total": {
-        "gasto": 1669.77,
-        "impr": 40781.0,
-        "cliques": 854.0,
-        "pv": 703.0,
-        "ck": 160.0,
+        "gasto": 1558.29,
+        "impr": 38193.0,
+        "cliques": 793.0,
+        "pv": 658.0,
+        "ck": 136.0,
         "vendas": 111,
         "fat": 5024.17,
-        "cpm": 40.94,
-        "ctr": 0.0209,
-        "cpc": 1.96,
-        "cpv": 2.38,
-        "cr": 0.8232,
-        "cpic": 10.44,
-        "vischk": 0.2276,
-        "convchk": 0.2,
-        "convlp": 0.0455,
-        "cac": 15.04,
-        "roas": 3.01,
+        "cpm": 40.8,
+        "ctr": 0.0208,
+        "cpc": 1.97,
+        "cpv": 2.37,
+        "cr": 0.8298,
+        "cpic": 11.46,
+        "vischk": 0.2067,
+        "convchk": 0.2353,
+        "convlp": 0.0486,
+        "cac": 14.04,
+        "roas": 3.22,
         "ticket": 45.26
       },
       "ads": {
-        "gasto": 1669.77,
-        "impr": 40781.0,
-        "cliques": 854.0,
-        "pv": 703.0,
-        "ck": 160.0,
+        "gasto": 1558.29,
+        "impr": 38193.0,
+        "cliques": 793.0,
+        "pv": 658.0,
+        "ck": 136.0,
         "vendas": 32,
         "fat": 1637.98,
-        "cpm": 40.94,
-        "ctr": 0.0209,
-        "cpc": 1.96,
-        "cpv": 2.38,
-        "cr": 0.8232,
-        "cpic": 10.44,
-        "vischk": 0.2276,
-        "convchk": 0.2,
-        "convlp": 0.0455,
-        "cac": 52.18,
-        "roas": 0.98,
+        "cpm": 40.8,
+        "ctr": 0.0208,
+        "cpc": 1.97,
+        "cpv": 2.37,
+        "cr": 0.8298,
+        "cpic": 11.46,
+        "vischk": 0.2067,
+        "convchk": 0.2353,
+        "convlp": 0.0486,
+        "cac": 48.7,
+        "roas": 1.05,
         "ticket": 51.19
       },
       "campanhas": [
         {
           "nome": "Imersão-SET26 | E2-CAP | P2-QUENTE | CONV | CBO | V1 | 2026-09-01 | Teste de Criativos",
-          "gasto": 985.41,
-          "impr": 21487.0,
-          "cliques": 445.0,
-          "pv": 364.0,
-          "ck": 93.0,
+          "gasto": 873.93,
+          "impr": 18899.0,
+          "cliques": 384.0,
+          "pv": 319.0,
+          "ck": 69.0,
           "vendas": 25,
           "fat": 1234.98,
-          "cpm": 45.86,
-          "ctr": 0.0207,
-          "cpc": 2.21,
-          "cpv": 2.71,
-          "cr": 0.818,
-          "cpic": 10.6,
-          "vischk": 0.2555,
-          "convchk": 0.2688,
-          "convlp": 0.0687,
-          "cac": 39.42,
-          "roas": 1.25,
+          "cpm": 46.24,
+          "ctr": 0.0203,
+          "cpc": 2.28,
+          "cpv": 2.74,
+          "cr": 0.8307,
+          "cpic": 12.67,
+          "vischk": 0.2163,
+          "convchk": 0.3623,
+          "convlp": 0.0784,
+          "cac": 34.96,
+          "roas": 1.41,
           "ticket": 49.4
         },
         {
@@ -393,32 +393,11 @@
       ],
       "top_anuncios": [
         {
-          "nome": "AD06_E_Feed_Captação_Imersão-SET26",
-          "gasto": 0.23,
-          "vendas": 1,
-          "cac": 0.23,
-          "roas": 303.15
-        },
-        {
-          "nome": "AD05_E_Feed_Captação_Imersão-SET26",
-          "gasto": 0.24,
-          "vendas": 1,
-          "cac": 0.24,
-          "roas": 288.71
-        },
-        {
-          "nome": "AD03_E_Feed_Captação_Imersão-SET26",
-          "gasto": 4.92,
-          "vendas": 2,
-          "cac": 2.46,
-          "roas": 17.9
-        },
-        {
           "nome": "AD01_V_ST_Captação_Imersão-SET26",
-          "gasto": 980.03,
+          "gasto": 873.93,
           "vendas": 19,
-          "cac": 51.58,
-          "roas": 0.93
+          "cac": 46.0,
+          "roas": 1.04
         },
         {
           "nome": "AD013",
@@ -426,15 +405,13 @@
           "vendas": 2,
           "cac": 81.25,
           "roas": 0.85
-        }
-      ],
-      "piores_anuncios": [
+        },
         {
-          "nome": "AD012",
-          "gasto": 57.37,
-          "vendas": 0,
-          "cac": null,
-          "roas": 0.0
+          "nome": "AD09",
+          "gasto": 370.18,
+          "vendas": 2,
+          "cac": 185.09,
+          "roas": 0.29
         },
         {
           "nome": "AD010",
@@ -444,17 +421,18 @@
           "roas": 0.0
         },
         {
-          "nome": "AD09",
-          "gasto": 370.18,
-          "vendas": 2,
-          "cac": 185.09,
-          "roas": 0.29
+          "nome": "AD012",
+          "gasto": 57.37,
+          "vendas": 0,
+          "cac": null,
+          "roas": 0.0
         }
-      ]
+      ],
+      "piores_anuncios": []
     },
     "mes": {
       "de": "2026-10-01",
-      "ate": "2026-10-16",
+      "ate": "2026-10-17",
       "total": {
         "gasto": 0.0,
         "impr": 0.0,
